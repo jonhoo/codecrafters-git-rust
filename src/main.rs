@@ -3,7 +3,6 @@ use clap::{Parser, Subcommand};
 use flate2::read::ZlibDecoder;
 use std::ffi::CStr;
 use std::fs;
-use std::io;
 use std::io::prelude::*;
 use std::io::BufReader;
 
@@ -83,23 +82,19 @@ fn main() -> anyhow::Result<()> {
                 _ => anyhow::bail!("we do not yet know how to print a '{kind}'"),
             };
             let size = size
-                .parse::<usize>()
+                .parse::<u64>()
                 .context(".git/objects file header has invalid size: {size}")?;
-            buf.clear();
-            buf.resize(size, 0);
-            z.read_exact(&mut buf[..])
-                .context("read true contents of .git/objects file")?;
-            let n = z
-                .read(&mut [0])
-                .context("validate EOF in .git/object file")?;
-            anyhow::ensure!(n == 0, ".git/object file had {n} trailing bytes");
-            let stdout = std::io::stdout();
-            let mut stdout = stdout.lock();
-
+            // NOTE: this won't error if the decompressed file is too long, but will at least not
+            // spam stdout and be vulnerable to a zipbomb.
+            let mut z = z.take(size);
             match kind {
-                Kind::Blob => stdout
-                    .write_all(&buf)
-                    .context("write object contents to stdout")?,
+                Kind::Blob => {
+                    let stdout = std::io::stdout();
+                    let mut stdout = stdout.lock();
+                    let n = std::io::copy(&mut z, &mut stdout)
+                        .context("write .git/objects file to stdout")?;
+                    anyhow::ensure!(n == size, ".git/object file was not the expected size (expected: {size}, actual: {n})");
+                }
             }
         }
     }
