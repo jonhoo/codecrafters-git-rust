@@ -3,6 +3,7 @@ use std::fs;
 use std::path::PathBuf;
 
 pub(crate) mod commands;
+pub(crate) mod objects;
 
 /// Simple program to greet a person
 #[derive(Parser, Debug)]
@@ -29,6 +30,10 @@ enum Command {
 
         file: PathBuf,
     },
+    LsTree {
+        #[clap(long)]
+        name_only: bool,
+    },
 }
 
 fn main() -> anyhow::Result<()> {
@@ -51,6 +56,7 @@ fn main() -> anyhow::Result<()> {
             object_hash,
         } => commands::cat_file::invoke(pretty_print, &object_hash)?,
         Command::HashObject { write, file } => commands::hash_object::invoke(write, &file)?,
+        Command::LsTree { name_only } => commands::ls_tree::invoke(name_only)?,
     }
 
     Ok(())
