@@ -1,5 +1,6 @@
 use crate::objects::{Kind, Object};
 use anyhow::Context;
+use std::env;
 use std::fmt::Write;
 use std::io::Cursor;
 
@@ -14,13 +15,29 @@ pub(crate) fn write_commit(
     if let Some(parent_hash) = parent_hash {
         writeln!(commit, "parent {parent_hash}")?;
     }
+    let (name, email) =
+        if let (Some(name), Some(email)) = (env::var_os("NAME"), env::var_os("EMAIL")) {
+            let name = name
+                .into_string()
+                .map_err(|_| anyhow::anyhow!("$NAME is invalid utf-8"))?;
+            let email = email
+                .into_string()
+                .map_err(|_| anyhow::anyhow!("$EMAIL is invalid utf-8"))?;
+            (name, email)
+        } else {
+            (
+                String::from("Jon Gjengset"),
+                String::from("jon@thesquareplanet.com"),
+            )
+        };
+    let time = std::time::SystemTime::now()
+        .duration_since(std::time::SystemTime::UNIX_EPOCH)
+        .context("current system time is before UNIX epoch")?;
+    writeln!(commit, "author {name} <{email}> {} +0000", time.as_secs())?;
     writeln!(
         commit,
-        "author Jon Gjengset <jon@thesquareplanet.com> 1709990458 +0100"
-    )?;
-    writeln!(
-        commit,
-        "committer Jon Gjengset <jon@thesquareplanet.com> 1709990458 +0100"
+        "committer {name} <{email}> {} +0000",
+        time.as_secs()
     )?;
     writeln!(commit, "")?;
     writeln!(commit, "{message}")?;
