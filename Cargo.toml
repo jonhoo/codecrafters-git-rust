@@ -18,5 +18,5 @@ clap = { version = "4.0.32", features = ["derive"] }                # creating a
 flate2 = "1.0"                                                     # gzip compression
 sha1 = "0.10.1"                                                    # hashing
 hex = "0.4.3"                                                      # working with hash output
-anyhow = "1.0.59"                                                  # error handling
+anyhow = "1.0.59"
 thiserror = "1.0.32"                                               # error handling
