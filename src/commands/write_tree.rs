@@ -6,7 +6,7 @@ use std::io::Cursor;
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 
-fn write_tree_for(path: &Path) -> anyhow::Result<Option<[u8; 20]>> {
+pub(crate) fn write_tree_for(path: &Path) -> anyhow::Result<Option<[u8; 20]>> {
     let mut dir =
         fs::read_dir(path).with_context(|| format!("open directory {}", path.display()))?;
 
